@@ -30,7 +30,9 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
 
-import org.cyanogenmod.internal.util.FileUtils;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public class LGGestureService extends Service {
 
@@ -78,12 +80,29 @@ public class LGGestureService extends Service {
                     Settings.Secure.DOUBLE_TAP_TO_WAKE, 0) != 0);
     }
 
+    // Writes "value" into the given file.
+    private boolean writeLine(String file, String value) {
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            fileOutputStream.write(value.getBytes());
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (FileNotFoundException e) {
+	    Log.e(TAG, "File not found: " + file, e);
+            return false;
+        } catch (IOException e) {
+            Log.e(TAG, "Cannot write to file: " + file, e);
+            return false;
+        }
+        return true;
+    }
+
     private boolean writeLPWG(boolean state) {
         if (DEBUG) Log.d(TAG, "Writing to lpwg_notify");
         if (isDoubleTapEnabled()) {
-            return FileUtils.writeLine(LPWG_NOTIFY_SYSFS, (state ? "9 1 1 1 0" : "9 1 0 1 0"));
+            return writeLine(LPWG_NOTIFY_SYSFS, (state ? "9 1 1 1 0" : "9 1 0 1 0"));
         } else {
-            return FileUtils.writeLine(LPWG_NOTIFY_SYSFS, (state ? "9 0 1 1 0" : "9 0 0 1 0"));
+            return writeLine(LPWG_NOTIFY_SYSFS, (state ? "9 0 1 1 0" : "9 0 0 1 0"));
         }
     }
 
